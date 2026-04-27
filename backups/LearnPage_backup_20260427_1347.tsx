@@ -422,10 +422,9 @@ export default function LearnPage({ childId, theme }: Props) {
         const newReviews = { ...reviews, [currentReview.key]: updated }
         setReviews(newReviews)
         localStorage.setItem(`pet-island-${childId}-reviews`, JSON.stringify(newReviews))
-        // Move guard BEFORE setTimeout so auto-skip effect doesn't fire during correct display
-        const atLast = reviewIdx >= dueItems.length - 1
-        reviewJustAdvanced.current = true
         setTimeout(() => {
+          const atLast = reviewIdx >= dueItems.length - 1
+          reviewJustAdvanced.current = true
           if (!atLast) {
             setReviewIdx(i => i + 1)
           } else {
