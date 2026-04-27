@@ -199,7 +199,6 @@ export default function LearnPage({ childId, theme }: Props) {
       const u = { ...reviews, [ck]: e }
       setReviews(u); localStorage.setItem(`pet-island-${childId}-reviews`, JSON.stringify(u))
       setLk(k => [...k, ck])
-      // FIX: set guard BEFORE timeout so auto-skip effect doesn't fire during display
       learnGuard.current = true
       setTimeout(() => {
         learnGuard.current = false
@@ -224,7 +223,7 @@ export default function LearnPage({ childId, theme }: Props) {
       idx++
     }
     if (idx !== li && idx < all.length) setLi(idx)
-  }, [tab, li, al])
+  }, [tab, li])
 
   // Review options init
   useEffect(() => {
