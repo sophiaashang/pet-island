@@ -89,6 +89,7 @@ export interface ChildProfile {
   milestones: Record<string, Milestone>;
   visitingPet?: { pet: Pet; fromChildId: ChildId };
   activePetId?: string;
+  _lastModified?: number;
 }
 
 export interface GachaPet {
