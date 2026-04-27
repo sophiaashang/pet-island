@@ -24,7 +24,7 @@ export function GachaPage({ isYuanyuan, theme, profile, updateProfile, id }: Pro
   }
 
   function doSinglePull() {
-    if (profile.totalCoins < 80) return
+    if (profile.totalCoins < 300) return
     setRolling(true)
     setResult(null)
     setShowResult(false)
@@ -34,7 +34,7 @@ export function GachaPage({ isYuanyuan, theme, profile, updateProfile, id }: Pro
       setPulls([pet])
       savePity(newPity)
       updateProfile(id, p => ({
-        ...p, totalCoins: p.totalCoins - 80,
+        ...p, totalCoins: p.totalCoins - 300,
         petsCollection: [...p.petsCollection, gachaPetToPet(pet)],
         pet: pet.type === 'DUCKY' || pet.type === 'WOLFY' ? p.pet : { ...p.pet, mood: Math.min(100, p.pet.mood + 10) }
       }))
@@ -44,7 +44,7 @@ export function GachaPage({ isYuanyuan, theme, profile, updateProfile, id }: Pro
   }
 
   function doMultiPull() {
-    if (profile.totalCoins < 720) return
+    if (profile.totalCoins < 2880) return
     setRolling(true)
     setResult(null)
     setShowResult(false)
@@ -60,7 +60,7 @@ export function GachaPage({ isYuanyuan, theme, profile, updateProfile, id }: Pro
       setResult(results[0])
       savePity(p)
       updateProfile(id, p2 => ({
-        ...p2, totalCoins: p2.totalCoins - 720,
+        ...p2, totalCoins: p2.totalCoins - 2880,
         petsCollection: [...p2.petsCollection, ...results.map(gachaPetToPet)],
         pet: { ...p2.pet, mood: Math.min(100, p2.pet.mood + 20) }
       }))
@@ -74,18 +74,18 @@ export function GachaPage({ isYuanyuan, theme, profile, updateProfile, id }: Pro
       <h2 className="font-black text-xl text-gray-800 mb-2 text-center">🎰 扭蛋机</h2>
       <div className="pixel-card rounded-3xl p-4 mb-4 text-center">
         <div className="text-6xl mb-2">{rolling ? '🎲' : '🎰'}</div>
-        <p className="text-sm text-gray-500 mb-3">保底进度: {pity >= 30 ? '30/30 已触发！' : `${pity}/30`}</p>
+        <p className="text-sm text-gray-500 mb-3">保底进度: {pity >= 10 ? '10/10 已触发！' : `${pity}/10`}</p>
         {pity >= 30 && !rolling && <p className="text-xs text-red-500 font-bold">✨ 下一次必出珍稀！</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <button onClick={doSinglePull} disabled={rolling || profile.totalCoins < 80}
           className={`${theme.button} ${theme.buttonText} py-4 rounded-2xl font-black text-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all`}>
-          单抽 🪙80
+          单抽 🪙300
         </button>
-        <button onClick={doMultiPull} disabled={rolling || profile.totalCoins < 720}
+        <button onClick={doMultiPull} disabled={rolling || profile.totalCoins < 2880}
           className="bg-purple-400 hover:bg-purple-500 text-white py-4 rounded-2xl font-black text-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all">
-          十连 🪙720
+          十连 🪙2880
         </button>
       </div>
 

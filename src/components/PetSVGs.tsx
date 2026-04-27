@@ -201,13 +201,14 @@ export function WolfySVG({ stage, className = '', size = 96 }: PetSVGProps) {
   )
 }
 
+// PetSVG: shows SVG for DUCKY/WOLFY, falls back to generic for others
 export function PetSVG({ type, stage, className = '', size = 96 }: { type: string; stage: EvolutionStage; className?: string; size?: number }) {
   if (type === 'DUCKY') return <DuckySVG stage={stage} className={className} size={size} />
   if (type === 'WOLFY') return <WolfySVG stage={stage} className={className} size={size} />
   // Generic placeholder for other pets
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="24" fill="#FFB7C5" stroke="#333" strokeWidth="2"/>
+      <circle cx="32" cy="32" r="24" fill={getPetColor(type as PetType)} stroke="#333" strokeWidth="2"/>
       <circle cx="24" cy="26" r="4" fill="#333"/>
       <circle cx="40" cy="26" r="4" fill="#333"/>
       <path d="M24 40 Q32 46 40 40" stroke="#333" strokeWidth="2" fill="none" strokeLinecap="round"/>

@@ -28,7 +28,7 @@ export const GACHA_WEIGHTS: Array<{ type: PetType; weight: number }> = [
 
 export function pullGacha(pityCounter: number): { pet: GachaPet; newPity: number } {
   const totalWeight = GACHA_WEIGHTS.reduce((sum, g) => sum + g.weight, 0)
-  const rollingPity = pityCounter >= 30
+  const rollingPity = pityCounter >= 10
   let roll = Math.random() * (rollingPity ? totalWeight + 1 : totalWeight)
   let selectedType: PetType = 'MEIMI'
   for (const g of GACHA_WEIGHTS) {

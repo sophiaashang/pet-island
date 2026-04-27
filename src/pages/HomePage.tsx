@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useGameContext } from '../App'
-import { DuckySVG } from '../components/PetSVGs'
-import { WolfySVG } from '../components/PetSVGs'
+import { PetImage } from '../components/PetImage'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -28,7 +27,7 @@ export default function HomePage() {
           style={{ boxShadow: '6px 6px 0 #D4A017' }}>
           <div className="text-center">
             <div className="text-6xl mb-3">🐥</div>
-            <DuckySVG stage={0} className="mx-auto animate-bounce-idle" size={80} />
+            <PetImage type="DUCKY" size={80} className="mx-auto animate-bounce-idle" />
             <h2 className="text-2xl font-black text-yellow-800 mt-3">元元的小岛</h2>
             <p className="text-yellow-700 font-semibold mt-1 text-sm">5岁 · 大班</p>
             <div className="mt-3 flex justify-center gap-2 text-xs">
@@ -50,7 +49,7 @@ export default function HomePage() {
           style={{ boxShadow: '6px 6px 0 #2E4A6E' }}>
           <div className="text-center">
             <div className="text-6xl mb-3">🐺</div>
-            <WolfySVG stage={0} className="mx-auto animate-bounce-idle" size={80} />
+            <PetImage type="WOLFY" size={80} className="mx-auto animate-bounce-idle" />
             <h2 className="text-2xl font-black text-blue-800 mt-3">新北的小岛</h2>
             <p className="text-blue-700 font-semibold mt-1 text-sm">11岁 · 5年级</p>
             <div className="mt-3 flex justify-center gap-2 text-xs">

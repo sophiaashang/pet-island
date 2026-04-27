@@ -5,6 +5,7 @@ export type PetType = 'DUCKY' | 'WOLFY' | 'MEIMI' | 'LINGLING' | 'FIRE' | 'BUBBL
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type EvolutionStage = 0 | 1 | 2;
 export type ItemType = 'food' | 'toy';
+export type RoomTheme = 'grass' | 'wood' | 'cloud';
 
 export interface MilestoneTask {
   id: string;
@@ -47,6 +48,8 @@ export interface Pet {
   speechLines: string[];
   currentLine: string;
   isNew: boolean;
+  roomTheme?: RoomTheme;
+  friendship?: number;
 }
 
 export interface Item {
@@ -84,6 +87,8 @@ export interface ChildProfile {
   totalCoins: number;
   stats: ChildStats;
   milestones: Record<string, Milestone>;
+  visitingPet?: { pet: Pet; fromChildId: ChildId };
+  activePetId?: string;
 }
 
 export interface GachaPet {
@@ -97,4 +102,27 @@ export interface GameState {
     yuanyuan: ChildProfile;
     xinbei: ChildProfile;
   };
+}
+
+// Learning types
+export interface ReviewEntry {
+  learnedDate: string; // ISO date string when learned
+  nextReviewDate: string; // ISO date string for next review
+  level: number; // 0=new, 1=1day, 2=2days, 3=4days, 4=7days, 5=15days, 6=30days (mastered)
+  correctCount: number;
+  incorrectCount: number;
+}
+
+export interface HanziWord {
+  char: string;
+  pinyin: string;
+  word: string;
+  emoji: string;
+}
+
+export interface PetWord {
+  word: string;
+  chinese: string;
+  english: string;
+  example: string;
 }
