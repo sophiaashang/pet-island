@@ -396,7 +396,7 @@ export default function LearnPage({ childId, theme }: Props) {
         setReviewIdx(i => i + 1)
       }
     }
-  }, [tab, reviewIdx, dueItems, reviews])
+  }, [tab, reviewIdx])
 
   function handleReviewSelect(optionIdx: number) {
     if (reviewState !== 'choice') return
