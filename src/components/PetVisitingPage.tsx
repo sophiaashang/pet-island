@@ -8,6 +8,7 @@ interface Props {
   otherProfile: ChildProfile
   theme: any
   onVisit: (visitingPet: { pet: Pet; fromChildId: ChildId } | undefined) => void
+  updateProfile: (id: string, updater: (p: ChildProfile) => ChildProfile) => void
 }
 
 interface VisitRecord {
@@ -30,7 +31,7 @@ function getFriendshipLabel(level: number): string {
   return '初次见面'
 }
 
-export default function PetVisitingPage({ childId, profile, otherProfile, theme, onVisit }: Props) {
+export default function PetVisitingPage({ childId, profile, otherProfile, theme, onVisit, updateProfile }: Props) {
   const [interacting, setInteracting] = useState(false)
   const [actionMsg, setActionMsg] = useState('')
   const [friendshipAnim, setFriendshipAnim] = useState(false)
@@ -264,7 +265,22 @@ export default function PetVisitingPage({ childId, profile, otherProfile, theme,
           {visitingPet ? (
             <p className="text-sm text-gray-500 mb-2">当前有宠物在做客！</p>
           ) : null}
+          {/* 召唤回来按钮 — 宠物送出去后可随时召回 */}
+        {visitingPet && (
           <button
+            onClick={() => {
+              if (window.confirm(`召唤 ${visitingPet.pet.nickname} 回来？`)) {
+                updateProfile(childId, p => ({ ...p, visitingPet: undefined }))
+                const otherId: ChildId = childId === 'yuanyuan' ? 'xinbei' : 'yuanyuan'
+                localStorage.removeItem(`visiting-notif-${otherId}`)
+              }
+            }}
+            className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 mb-2"
+          >
+            🔙 召唤 {visitingPet.pet.nickname} 回来
+          </button>
+        )}
+        <button
             onClick={sendMyPet}
             disabled={!!visitingPet}
             className={`${theme.button} ${theme.buttonText} px-6 py-3 rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-all`}

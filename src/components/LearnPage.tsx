@@ -260,7 +260,8 @@ interface Props { childId: ChildId; theme: any }
 // LearnTab：答对后显示"下一个"按钮，用户主动点击才进下一题（不用auto-skip，无时序bug）
 // ReviewTab：答对后1秒自动进下一题（auto-skip + reviewGuard保护）
 export default function LearnPage({ childId, theme }: Props) {
-  const [tab, setTab] = useState<'learn'|'review'>('learn')
+  // sub: hanzi | words (only used for Yuan learn tab)
+  const [tab, setTab] = useState<'hanzi'|'words'|'review'>('hanzi')
   const [reviews, setReviews] = useState<Record<string,ReviewEntry>>(() => { try { return JSON.parse(localStorage.getItem(`pet-island-${childId}-reviews`) || '{}') } catch { return {} } })
 
   // --- Learn tab state ---
@@ -291,11 +292,13 @@ export default function LearnPage({ childId, theme }: Props) {
   const todaysWords: (HanziWord|PetWord)[] = isY ? getH(doy) : getW(doy)
   const dk = Object.entries(reviews).filter(([,e]) => e.nextReviewDate <= today() && e.level < 6).map(([k]) => k)
   const ma = Object.entries(reviews).filter(([,e]) => e.level >= 6).length
-  // 已掌握的不算新学
+  // 已掌握的不算新学（words tab用yuan-${word}键）
   const nc = todaysWords.filter(item => {
     const k = isY ? `yuan-${(item as PetWord).word}` : `word-${(item as PetWord).word}`
     return !reviews[k]
   }).length
+  // yuanWords新词计数（未在reviews中的）
+  const yuanWordsNewCount = yuanWords.filter(item => !reviews[`yuan-${item.word}`]).length
   const di = dk.map(k => k.startsWith('hanzi-') ? { k, item: HANZI_POOL.find(h => h.char === k.slice(6)) || HANZI_POOL[0], t: 'h' as const } : { k, item: PET_POOL.find(p => p.word === k.slice(5)) || PET_POOL[0], t: 'w' as const })
   const ci: HanziWord|PetWord = todaysWords[li]
   const ck = isY ? `hanzi-${(ci as HanziWord).char}` : `word-${(ci as PetWord).word}`
@@ -303,7 +306,7 @@ export default function LearnPage({ childId, theme }: Props) {
   const cr = di[ri]
 
     useEffect(() => {
-    if (tab !== 'learn' || !ci) return
+    if ((tab !== 'hanzi' && tab !== 'words') || !ci) return
     if (isY) {
       const c = ci as HanziWord
       setHO([...HANZI_POOL.filter(h => h.char !== c.char).sort(() => Math.random()-.5).slice(0,3), c].sort(() => Math.random()-.5))
@@ -419,10 +422,10 @@ export default function LearnPage({ childId, theme }: Props) {
       <div className={`pixel-card rounded-3xl p-4 bg-${ac}-100`}>
         <div className="flex items-center justify-between mb-2">
           <h2 className={`font-black text-lg text-${ac}-700`}>
-            {isY ? (tab === 'learn' ? '📝 认字学习' : '📖 本周单词') : (tab === 'learn' ? '📖 PET 词汇' : '📖 PET 复习')}
+            {isY ? (tab === 'hanzi' ? '🅰️ 认字学习' : tab === 'words' ? '📖 本周单词' : '📖 复习') : (tab === 'hanzi' ? '📖 PET 词汇' : '📖 PET 复习')}
           </h2>
           <span className={`text-xs font-bold px-2 py-1 bg-white rounded-full text-${ac}-700`}>
-            {isY && tab === 'learn' ? `第${weekNum}周` : new Date().toLocaleDateString('zh-CN', {month:'long',day:'numeric'})}
+            {isY && (tab === 'hanzi' || tab === 'words') ? `第${weekNum}周` : new Date().toLocaleDateString('zh-CN', {month:'long',day:'numeric'})}
           </span>
         </div>
         <div className="flex gap-4 text-sm">
@@ -434,16 +437,28 @@ export default function LearnPage({ childId, theme }: Props) {
 
       {/* Tab switcher */}
       <div className="flex bg-white rounded-2xl p-1 border-2 border-gray-200">
-        <button onClick={() => setTab('learn')} className={`flex-1 py-2 rounded-xl font-bold text-sm ${tab==='learn'?bc+' text-white':'text-gray-400'}`}>
-          📚 学{isY ? '字' : '词'}
-        </button>
+        {isY && (
+          <button onClick={() => setTab('hanzi')} className={`flex-1 py-2 rounded-xl font-bold text-sm ${tab==='hanzi'?bc+' text-white':'text-gray-400'}`}>
+            🅰️ 认字
+          </button>
+        )}
+        {!isY && (
+          <button onClick={() => setTab('hanzi')} className={`flex-1 py-2 rounded-xl font-bold text-sm ${tab==='hanzi'?bc+' text-white':'text-gray-400'}`}>
+            📖 学词
+          </button>
+        )}
+        {isY && (
+          <button onClick={() => setTab('words')} className={`flex-1 py-2 rounded-xl font-bold text-sm ${tab==='words'?bc+' text-white':'text-gray-400'}`}>
+            📖 本周单词{yuanWordsNewCount>0 && <span className="bg-red-500 text-white text-xs rounded-full px-1.5 ml-1">{yuanWordsNewCount}</span>}
+          </button>
+        )}
         <button onClick={() => setTab('review')} className={`flex-1 py-2 rounded-xl font-bold text-sm ${tab==='review'?bc+' text-white':'text-gray-400'}`}>
           🔄 复习 {dk.length>0 && <span className="bg-red-500 text-white text-xs rounded-full px-1.5 ml-1">{dk.length}</span>}
         </button>
       </div>
 
       {/* ===== LEARN TAB ===== */}
-      {tab === 'learn' && (
+      {(tab === 'hanzi' || tab === 'words') && (
         <div className="space-y-3">
           {li >= todaysWords.length ? (
             <div className="pixel-card rounded-3xl p-8 text-center">
@@ -455,7 +470,7 @@ export default function LearnPage({ childId, theme }: Props) {
             <>
               {/* Question card */}
               <div className={`pixel-card rounded-3xl p-5 ${fl?'bg-green-100 border-2 border-green-400 animate-pulse':'bg-white'} transition-all`}>
-                {isY ? (
+                {tab === 'hanzi' ? (
                   <>
                     <div className="text-center mb-2">
                       <p className="text-5xl font-black text-gray-700 mb-1">{(ci as HanziWord).pinyin}</p>
@@ -471,8 +486,8 @@ export default function LearnPage({ childId, theme }: Props) {
                 ) : (
                   <>
                     <div className="text-center mb-4">
-                      <p className="text-2xl font-black text-blue-700">{(ci as PetWord).word}</p>
-                      <p className="text-sm text-gray-400 mt-1">选出对应的中文解释</p>
+                      <p className="text-2xl font-black text-yellow-700">{(ci as PetWord).word}</p>
+                      <p className="text-sm text-gray-400 mt-1">选出中文意思</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {(wO as PetWord[]).map((opt, i) => {

@@ -472,6 +472,7 @@ export default function ChildIsland() {
           otherProfile={otherProfile}
           theme={theme}
           onVisit={handleVisit}
+          updateProfile={updateProfile}
         />
       )}
     </div>
