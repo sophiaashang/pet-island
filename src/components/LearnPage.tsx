@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChildId, ReviewEntry, HanziWord, PetWord } from '../types'
 
-// ============== 汉 字 池 ==============
 const HANZI_POOL: HanziWord[] = [
   { char: '日', pinyin: 'rì', word: '日出', emoji: '🌅' },{ char: '月', pinyin: 'yuè', word: '月亮', emoji: '🌙' },
   { char: '水', pinyin: 'shuǐ', word: '水果', emoji: '🍎' },{ char: '火', pinyin: 'huǒ', word: '火车', emoji: '🚂' },
@@ -20,7 +19,6 @@ const HANZI_POOL: HanziWord[] = [
   { char: '白', pinyin: 'bái', word: '白色', emoji: '⚪' },{ char: '黑', pinyin: 'hēi', word: '黑色', emoji: '⚫' },
 ]
 
-// ============== 新北 PET 词 池 ==============
 const PET_POOL: PetWord[] = [
   { word: 'clean', chinese: '干净的/打扫', english: 'clean', example: 'I clean my room every day.' },
   { word: 'drink', chinese: '喝', english: 'drink', example: 'I drink water every morning.' },
@@ -48,7 +46,6 @@ const PET_POOL: PetWord[] = [
   { word: 'write', chinese: '写', english: 'write', example: 'I write my diary every night.' },
 ]
 
-// ============== 元元每周PET词（8周循环）==============
 const YUAN_WEEKS: PetWord[][] = [
   [{ word: 'clean', chinese: '干净的/打扫', english: 'clean', example: 'I clean my room every day.' },
    { word: 'drink', chinese: '喝', english: 'drink', example: 'I drink water every morning.' },
@@ -146,18 +143,24 @@ function getYuanWeekWords(): PetWord[] {
 }
 
 const _doy = (() => { const n = new Date(), s = new Date(n.getFullYear(), 0, 0); return Math.floor((n.getTime() - s.getTime()) / 864e5) })()
-const getH = (d: number) => { const s = (d * 5) % HANZI_POOL.length; return [0,1,2,3,4].map(i => HANZI_POOL[(s+i) % HANZI_POOL.length]) }
-const getW = (d: number) => { const s = (d * 8) % PET_POOL.length; return [0,1,2,3,4,5,6,7].map(i => PET_POOL[(s+i) % PET_POOL.length]) }
+const getHanzi = (d: number) => { const s = (d * 5) % HANZI_POOL.length; return [0,1,2,3,4].map(i => HANZI_POOL[(s+i) % HANZI_POOL.length]) }
+const getPet = (d: number) => { const s = (d * 8) % PET_POOL.length; return [0,1,2,3,4,5,6,7].map(i => PET_POOL[(s+i) % PET_POOL.length]) }
 const shuffle = <T,>(a: T[]): T[] => [...a].sort(() => Math.random() - 0.5)
 
 interface Props { childId: ChildId; theme: any }
 
 export default function LearnPage({ childId, theme }: Props) {
   const isY = childId === 'yuanyuan'
+
+  // Reviews
   const [reviews, setReviews] = useState<Record<string, ReviewEntry>>(() => {
     try { return JSON.parse(localStorage.getItem(`pet-island-${childId}-reviews`) || '{}') } catch { return {} }
   })
+
+  // Tab: hanzi(元元识字|新北PET词) | words(元元本周词) | review
   const [tab, setTab] = useState<'hanzi'|'words'|'review'>('hanzi')
+
+  // LEARN state
   const [learnIdx, setLearnIdx] = useState(0)
   const [learnOpts, setLearnOpts] = useState<(HanziWord|PetWord)[]>([])
   const [selIdx, setSelIdx] = useState<number|null>(null)
@@ -165,6 +168,9 @@ export default function LearnPage({ childId, theme }: Props) {
   const [correctIdx, setCorrectIdx] = useState<number|null>(null)
   const [flash, setFlash] = useState(false)
   const [showNext, setShowNext] = useState(false)
+  const [done, setDone] = useState(false)  // completed all items
+
+  // REVIEW state
   const [reviewIdx, setReviewIdx] = useState(0)
   const [reviewOpts, setReviewOpts] = useState<(HanziWord|PetWord)[]>([])
   const [rSelIdx, setRSelIdx] = useState<number|null>(null)
@@ -176,12 +182,19 @@ export default function LearnPage({ childId, theme }: Props) {
   const weekNum = getWeekOfYear()
   const yuanWords = getYuanWeekWords()
 
-  // Pool: 元元hanzi=汉字池, 元元words=每周词, 新北=PET池
-  const learnPool: (HanziWord|PetWord)[] = isY
-    ? (tab === 'words' ? yuanWords : getH(_doy))
-    : getW(_doy)
+  // Which content are we showing? 'hanzi' | 'pet' (Xinbei's PET words)
+  // For Yuan: hanzi tab → hanzi pool, words tab → yuan words
+  // For Xinbei: hanzi tab → PET pool
+  const learnContent: 'hanzi' | 'pet' | 'yuan-words' =
+    isY ? (tab === 'words' ? 'yuan-words' : 'hanzi')
+        : 'pet'
 
-  // Due items
+  const learnPool: (HanziWord|PetWord)[] =
+    learnContent === 'hanzi' ? getHanzi(_doy)
+    : learnContent === 'pet' ? getPet(_doy)
+    : yuanWords
+
+  // Due reviews (all types mixed)
   const dueItems = Object.entries(reviews)
     .filter(([, e]) => e.nextReviewDate <= todayStr() && e.level < 6)
     .map(([k]) => {
@@ -211,17 +224,21 @@ export default function LearnPage({ childId, theme }: Props) {
     localStorage.setItem(`pet-island-${childId}-reviews`, JSON.stringify(next))
   }
 
-  // Populate learn options when item/tab changes
+  // Populate learn options
   useEffect(() => {
-    if (!currentItem || (tab !== 'hanzi' && tab !== 'words')) return
-    setSelIdx(null); setWrongIdx(null); setCorrectIdx(null); setShowNext(false)
-    if (tab === 'hanzi') {
+    if (!currentItem || tab === 'review') return
+    setSelIdx(null); setWrongIdx(null); setCorrectIdx(null); setShowNext(false); setDone(false)
+
+    const correct = currentItem
+    const isHanziItem = (currentItem as any).char !== undefined
+
+    if (isHanziItem) {
       const c = currentItem as HanziWord
       const wrong = HANZI_POOL.filter(h => h.char !== c.char)
       setLearnOpts(shuffle([...shuffle(wrong).slice(0, 3), c]))
     } else {
       const c = currentItem as PetWord
-      const pool: PetWord[] = isY ? yuanWords : PET_POOL
+      const pool: PetWord[] = learnContent === 'yuan-words' ? yuanWords : PET_POOL
       const wrong = pool.filter(p => p.word !== c.word)
       setLearnOpts(shuffle([...shuffle(wrong).slice(0, 3), c]))
     }
@@ -233,7 +250,7 @@ export default function LearnPage({ childId, theme }: Props) {
     setRSelIdx(null); setRWrongIdx(null); setRCorrectIdx(null)
     const isHanzi = reviewItem.k.startsWith('hanzi-')
     const c = reviewItem.item
-    if (isHanzi) {
+    if ((c as any).char !== undefined) {
       const h = c as HanziWord
       const wrong = HANZI_POOL.filter(x => x.char !== h.char)
       setReviewOpts(shuffle([...shuffle(wrong).slice(0, 3), h]))
@@ -249,16 +266,27 @@ export default function LearnPage({ childId, theme }: Props) {
   function handleLearnClick(idx: number) {
     if (selIdx !== null) return
     const opt = learnOpts[idx]
-    const isHanzi = tab === 'hanzi'
-    const ok = isHanzi
+    const isHanziItem = (opt as any).char !== undefined
+    const ok = isHanziItem
       ? (opt as HanziWord).char === (currentItem as HanziWord).char
       : (opt as PetWord).word === (currentItem as PetWord).word
+
     if (ok) {
-      setSelIdx(idx); setCorrectIdx(idx); setFlash(true); setShowNext(true)
+      setSelIdx(idx); setCorrectIdx(idx); setFlash(true)
       setTimeout(() => setFlash(false), 600)
-      const key = isHanzi ? `hanzi-${(currentItem as HanziWord).char}`
+      const key = isHanziItem
+        ? `hanzi-${(currentItem as HanziWord).char}`
         : isY ? `yuan-${(currentItem as PetWord).word}` : `word-${(currentItem as PetWord).word}`
       saveReview(key, true)
+
+      // After correct: decide next state
+      if (learnIdx >= learnPool.length - 1) {
+        // Last item: mark done, show completion screen
+        setShowNext(false)
+        setDone(true)
+      } else {
+        setShowNext(true)
+      }
     } else {
       setSelIdx(idx); setWrongIdx(idx)
       setTimeout(() => { setWrongIdx(null); setSelIdx(null) }, 800)
@@ -268,15 +296,18 @@ export default function LearnPage({ childId, theme }: Props) {
   function handleReviewClick(idx: number) {
     if (rSelIdx !== null) return
     const opt = reviewOpts[idx]
-    const isHanzi = reviewItem?.k.startsWith('hanzi-')
-    const ok = isHanzi
+    const isHanziItem = (opt as any).char !== undefined
+    const ok = isHanziItem
       ? (opt as HanziWord).char === (reviewItem.item as HanziWord).char
       : (opt as PetWord).word === (reviewItem.item as PetWord).word
     reviewGuard.current = true
     if (ok) {
       setRSelIdx(idx); setRCorrectIdx(idx); setRFlash(true)
       saveReview(reviewItem.k, true)
-      setTimeout(() => { reviewGuard.current = false; setReviewIdx(i => i < dueItems.length - 1 ? i + 1 : 0) }, 1000)
+      setTimeout(() => {
+        reviewGuard.current = false
+        setReviewIdx(i => i < dueItems.length - 1 ? i + 1 : 0)
+      }, 1000)
     } else {
       setRSelIdx(idx); setRWrongIdx(idx)
       setTimeout(() => { setRWrongIdx(null); setRSelIdx(null) }, 800)
@@ -285,21 +316,32 @@ export default function LearnPage({ childId, theme }: Props) {
   }
 
   function handleLearnNext() {
-    if (learnIdx < learnPool.length - 1) setLearnIdx(i => i + 1)
-    else setLearnIdx(learnPool.length)
+    setLearnIdx(i => i + 1)
   }
 
-  function btnCls(idx: number, corr: number|null, wrong: number|null, sel: number|null) {
+  function handleGoToReview() {
+    setTab('review')
+    setReviewIdx(0)
+  }
+
+  // Button class: only correct=green, wrong=red, others=hidden, unselected=default
+  function btnCls(idx: number, corr: number|null, wrong: number|null, sel: number|null, disabled: boolean) {
     const b = 'w-full py-3 rounded-2xl font-black text-lg text-center transition-all'
-    if (sel === null) return `${b} bg-white border-2 border-gray-200 active:scale-95 hover:bg-gray-50`
-    if (sel === corr) return `${b} bg-green-400 text-white`
-    if (sel === wrong) return `${b} bg-red-400 text-white`
-    return `${b} bg-gray-100 text-gray-400`
+    // After selection
+    if (sel !== null) {
+      if (idx === corr) return `${b} bg-green-400 text-white`
+      if (idx === wrong) return `${b} bg-red-400 text-white`
+      return `${b} bg-gray-100 text-gray-300`  // other options grayed out
+    }
+    return `${b} bg-white border-2 border-gray-200 active:scale-95 hover:bg-gray-50`
   }
 
   const ac = (theme as any)?.accentColor || 'blue'
   const bc = `bg-${ac}-`
   const tc = `text-${ac}-`
+
+  // Pool label
+  const poolLabel = learnContent === 'hanzi' ? '字' : '词'
 
   return (
     <div className="space-y-3">
@@ -318,29 +360,42 @@ export default function LearnPage({ childId, theme }: Props) {
 
       {/* Tab switcher */}
       <div className="flex bg-white rounded-2xl p-1 border-2 border-gray-200">
-        {isY && <button onClick={() => { setTab('hanzi'); setLearnIdx(0) }} className={`flex-1 py-2 rounded-xl font-bold text-xs ${tab === 'hanzi' ? `${bc}500 text-white` : 'text-gray-400'}`}>🅰️ 认字</button>}
-        {isY && <button onClick={() => { setTab('words'); setLearnIdx(0) }} className={`flex-1 py-2 rounded-xl font-bold text-xs ${tab === 'words' ? `${bc}500 text-white` : 'text-gray-400'}`}>📖 本周单词</button>}
+        {isY && <button onClick={() => { setTab('hanzi'); setLearnIdx(0); setDone(false) }} className={`flex-1 py-2 rounded-xl font-bold text-xs ${tab === 'hanzi' ? `${bc}500 text-white` : 'text-gray-400'}`}>🅰️ 认字</button>}
+        {isY && <button onClick={() => { setTab('words'); setLearnIdx(0); setDone(false) }} className={`flex-1 py-2 rounded-xl font-bold text-xs ${tab === 'words' ? `${bc}500 text-white` : 'text-gray-400'}`}>📖 本周单词</button>}
         {!isY && <button onClick={() => setTab('hanzi')} className={`flex-1 py-2 rounded-xl font-bold text-xs ${tab === 'hanzi' ? `${bc}500 text-white` : 'text-gray-400'}`}>📖 学词</button>}
         <button onClick={() => setTab('review')} className={`flex-1 py-2 rounded-xl font-bold text-xs ${tab === 'review' ? `${bc}500 text-white` : 'text-gray-400'}`}>
           🔄 复习 {dueItems.length > 0 && <span className="bg-red-500 text-white text-xs rounded-full px-1.5 ml-1">{dueItems.length}</span>}
         </button>
       </div>
 
-      {/* ======================= LEARN (hanzi + words) ======================= */}
+      {/* ======================= LEARN ======================= */}
       {(tab === 'hanzi' || tab === 'words') && (
         <div className="space-y-3">
-          {learnIdx >= learnPool.length ? (
-            <div className="pixel-card rounded-3xl p-8 text-center">
-              <div className="text-5xl mb-3">🎉</div>
-              <p className="font-black text-gray-700 text-lg">太棒了！学完了！</p>
-              <p className="text-sm text-gray-500 mt-1">明天再来学新内容吧~</p>
+          {/* Done / Completion screen */}
+          {done && (
+            <div className="pixel-card rounded-3xl p-8 text-center space-y-4">
+              <div className="text-5xl mb-2">🎉</div>
+              <p className="font-black text-gray-700 text-lg">太棒了！今天学的都记住了！</p>
+              <p className="text-sm text-gray-500">学完 {learnPool.length} 个{poolLabel}，可以开始复习了~</p>
+              <div className="flex flex-col gap-2">
+                <button onClick={handleGoToReview} className={`${bc}500 hover:${bc}600 text-white py-3 rounded-2xl font-black text-base transition-all active:scale-95`}>
+                  📖 开始复习
+                </button>
+                <button onClick={() => { setLearnIdx(0); setDone(false); setSelIdx(null); setWrongIdx(null); setCorrectIdx(null) }}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-2xl font-bold text-sm transition-all">
+                  🔄 再学一遍
+                </button>
+              </div>
             </div>
-          ) : currentItem ? (
+          )}
+
+          {/* Question card */}
+          {!done && currentItem && (
             <>
               <div className={`pixel-card rounded-3xl p-5 ${flash ? 'bg-green-100 border-2 border-green-400' : 'bg-white'} transition-all`}>
 
-                {/* HANZI: show pinyin → pick character */}
-                {tab === 'hanzi' && (() => {
+                {/* HANZI: pinyin → character */}
+                {learnContent === 'hanzi' && (() => {
                   const h = currentItem as HanziWord
                   return (
                     <>
@@ -351,15 +406,15 @@ export default function LearnPage({ childId, theme }: Props) {
                       <div className="grid grid-cols-2 gap-3">
                         {(learnOpts as HanziWord[]).map((opt, i) => (
                           <button key={opt.char} onClick={() => handleLearnClick(i)} disabled={selIdx !== null}
-                            className={btnCls(i, correctIdx, wrongIdx, selIdx)}>{opt.char}</button>
+                            className={btnCls(i, correctIdx, wrongIdx, selIdx, selIdx !== null)}>{opt.char}</button>
                         ))}
                       </div>
                     </>
                   )
                 })()}
 
-                {/* WORDS: show English → pick Chinese meaning */}
-                {tab === 'words' && (() => {
+                {/* PET: English word → Chinese meaning */}
+                {(learnContent === 'pet' || learnContent === 'yuan-words') && (() => {
                   const p = currentItem as PetWord
                   return (
                     <>
@@ -370,7 +425,7 @@ export default function LearnPage({ childId, theme }: Props) {
                       <div className="grid grid-cols-2 gap-3">
                         {(learnOpts as PetWord[]).map((opt, i) => (
                           <button key={opt.word + i} onClick={() => handleLearnClick(i)} disabled={selIdx !== null}
-                            className={`${btnCls(i, correctIdx, wrongIdx, selIdx)} text-sm`}>
+                            className={`${btnCls(i, correctIdx, wrongIdx, selIdx, selIdx !== null)} text-sm`}>
                             <div className="text-base font-black">{opt.chinese}</div>
                           </button>
                         ))}
@@ -383,21 +438,22 @@ export default function LearnPage({ childId, theme }: Props) {
                 {selIdx !== null && wrongIdx !== null && <div className="mt-3 text-center"><span className="bg-red-400 text-white px-4 py-1 rounded-full font-bold text-sm">❌ 不对哦，再试一次！</span></div>}
               </div>
 
-              {showNext && learnIdx < learnPool.length - 1 && (
-                <button onClick={handleLearnNext} className="w-full bg-green-400 hover:bg-green-500 text-white py-3 rounded-2xl font-black text-base transition-all active:scale-95">下一个 →</button>
-              )}
-              {showNext && learnIdx >= learnPool.length - 1 && (
-                <div className="text-center"><span className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-bold text-sm">🎉 这组学完了！</span></div>
+              {/* Next button (not last item) */}
+              {showNext && (
+                <button onClick={handleLearnNext} className="w-full bg-green-400 hover:bg-green-500 text-white py-3 rounded-2xl font-black text-base transition-all active:scale-95">
+                  下一个 →
+                </button>
               )}
 
+              {/* Progress dots */}
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 {learnPool.map((_, i) => (
                   <div key={i} className={`w-2 h-2 rounded-full transition-all ${i === learnIdx ? 'bg-yellow-400 w-4' : i < learnIdx ? 'bg-green-400' : 'bg-gray-200'}`} />
                 ))}
               </div>
-              <p className="text-center text-xs text-gray-400">第 {learnIdx + 1} / {learnPool.length} {tab === 'words' || !isY ? '词' : '字'}</p>
+              <p className="text-center text-xs text-gray-400">第 {learnIdx + 1} / {learnPool.length} {poolLabel}</p>
             </>
-          ) : null}
+          )}
         </div>
       )}
 
@@ -410,16 +466,12 @@ export default function LearnPage({ childId, theme }: Props) {
               <p className="font-black text-gray-700 text-lg">暂时没有要复习的！</p>
               <p className="text-sm text-gray-500 mt-1">学完新词后再来吧~</p>
             </div>
-          ) : reviewIdx >= dueItems.length ? (
-            <div className="pixel-card rounded-3xl p-8 text-center">
-              <div className="text-5xl mb-3">🎉</div><p className="font-black text-gray-700 text-lg">复习完毕！</p>
-            </div>
-          ) : reviewItem ? (
+          ) : (
             <>
               <div className={`pixel-card rounded-3xl p-5 ${rFlash ? 'bg-green-100 border-2 border-green-400' : 'bg-white'} transition-all`}>
 
                 {/* Hanzi review */}
-                {reviewItem.k.startsWith('hanzi-') && (() => {
+                {(reviewItem.item as any).char !== undefined && (() => {
                   const h = reviewItem.item as HanziWord
                   return (
                     <>
@@ -430,7 +482,7 @@ export default function LearnPage({ childId, theme }: Props) {
                       <div className="grid grid-cols-2 gap-3">
                         {(reviewOpts as HanziWord[]).map((opt, i) => (
                           <button key={opt.char} onClick={() => handleReviewClick(i)} disabled={rSelIdx !== null}
-                            className={btnCls(i, rCorrectIdx, rWrongIdx, rSelIdx)}>{opt.char}</button>
+                            className={btnCls(i, rCorrectIdx, rWrongIdx, rSelIdx, rSelIdx !== null)}>{opt.char}</button>
                         ))}
                       </div>
                     </>
@@ -438,7 +490,7 @@ export default function LearnPage({ childId, theme }: Props) {
                 })()}
 
                 {/* PET word review */}
-                {!reviewItem.k.startsWith('hanzi-') && (() => {
+                {(reviewItem.item as any).word !== undefined && (() => {
                   const p = reviewItem.item as PetWord
                   return (
                     <>
@@ -449,7 +501,7 @@ export default function LearnPage({ childId, theme }: Props) {
                       <div className="grid grid-cols-2 gap-3">
                         {(reviewOpts as PetWord[]).map((opt, i) => (
                           <button key={opt.word + i} onClick={() => handleReviewClick(i)} disabled={rSelIdx !== null}
-                            className={`${btnCls(i, rCorrectIdx, rWrongIdx, rSelIdx)} text-sm`}>
+                            className={`${btnCls(i, rCorrectIdx, rWrongIdx, rSelIdx, rSelIdx !== null)} text-sm`}>
                             <div className="text-base font-black">{opt.chinese}</div>
                           </button>
                         ))}
@@ -469,7 +521,7 @@ export default function LearnPage({ childId, theme }: Props) {
               </div>
               <p className="text-center text-xs text-gray-400">第 {reviewIdx + 1} / {dueItems.length} 题</p>
             </>
-          ) : null}
+          )}
         </div>
       )}
     </div>
