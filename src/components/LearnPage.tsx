@@ -288,7 +288,7 @@ export default function LearnPage({ childId, theme }: Props) {
   const yuanWords = getYuanWeekWords()
   const weekNum = getWeekOfYear()
   // 元元用每周PET词；新北用PET词池（每天8词轮换）
-  const todaysWords: (HanziWord|PetWord)[] = isY ? yuanWords : getW(doy)
+  const todaysWords: (HanziWord|PetWord)[] = isY ? getH(doy) : getW(doy)
   const dk = Object.entries(reviews).filter(([,e]) => e.nextReviewDate <= today() && e.level < 6).map(([k]) => k)
   const ma = Object.entries(reviews).filter(([,e]) => e.level >= 6).length
   // 已掌握的不算新学
@@ -298,7 +298,7 @@ export default function LearnPage({ childId, theme }: Props) {
   }).length
   const di = dk.map(k => k.startsWith('hanzi-') ? { k, item: HANZI_POOL.find(h => h.char === k.slice(6)) || HANZI_POOL[0], t: 'h' as const } : { k, item: PET_POOL.find(p => p.word === k.slice(5)) || PET_POOL[0], t: 'w' as const })
   const ci: HanziWord|PetWord = todaysWords[li]
-  const ck = isY ? `yuan-${(ci as PetWord).word}` : (isY ? '' : `word-${(ci as PetWord).word}`)
+  const ck = isY ? `hanzi-${(ci as HanziWord).char}` : `word-${(ci as PetWord).word}`
   const al = !!reviews[ck] || justLearnedRef.current
   const cr = di[ri]
 
