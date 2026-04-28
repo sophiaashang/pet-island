@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChildId, ReviewEntry, HanziWord, PetWord } from '../types'
 
+// ============== 汉 字 池 ==============
 const HANZI_POOL: HanziWord[] = [
   { char: '日', pinyin: 'rì', word: '日出', emoji: '🌅' },{ char: '月', pinyin: 'yuè', word: '月亮', emoji: '🌙' },
   { char: '水', pinyin: 'shuǐ', word: '水果', emoji: '🍎' },{ char: '火', pinyin: 'huǒ', word: '火车', emoji: '🚂' },
@@ -18,6 +19,8 @@ const HANZI_POOL: HanziWord[] = [
   { char: '左', pinyin: 'zuǒ', word: '左边', emoji: '⬅️' },{ char: '右', pinyin: 'yòu', word: '右边', emoji: '➡️' },
   { char: '白', pinyin: 'bái', word: '白色', emoji: '⚪' },{ char: '黑', pinyin: 'hēi', word: '黑色', emoji: '⚫' },
 ]
+
+// ============== 新北 PET 词 池 ==============
 const PET_POOL: PetWord[] = [
   { word: 'abandon', chinese: '放弃', english: 'abandon', example: 'Never abandon your dreams.' },
   { word: 'ability', chinese: '能力', english: 'ability', example: 'She has the ability to learn quickly.' },
@@ -121,31 +124,157 @@ const PET_POOL: PetWord[] = [
   { word: 'chapter', chinese: '章节', english: 'chapter', example: 'Read the first chapter for tomorrow.' },
   { word: 'character', chinese: '角色/性格', english: 'character', example: 'The story has many interesting characters.' },
 ]
+
+// ============== 元元每周PET词汇（每周10词，循环覆盖52周）==============
+const YUAN_WEEKS: PetWord[][] = [
+  // 第1周
+  [
+    { word: 'clean', chinese: '干净的/打扫', english: 'clean', example: 'I clean my room every day.' },
+    { word: 'drink', chinese: '喝', english: 'drink', example: 'I drink water every morning.' },
+    { word: 'eat', chinese: '吃', english: 'eat', example: 'I eat breakfast at 7 o\'clock.' },
+    { word: 'sleep', chinese: '睡觉', english: 'sleep', example: 'I sleep eight hours every night.' },
+    { word: 'take a photo', chinese: '拍照', english: 'take a photo', example: 'Let me take a photo of this beautiful view.' },
+    { word: 'beach', chinese: '海滩', english: 'beach', example: 'We played on the beach yesterday.' },
+    { word: 'flower', chinese: '花', english: 'flower', example: 'The flower smells very sweet.' },
+    { word: 'sea', chinese: '大海', english: 'sea', example: 'The sea is blue and beautiful.' },
+    { word: 'sun', chinese: '太阳', english: 'sun', example: 'The sun is very bright today.' },
+    { word: 'tree', chinese: '树', english: 'tree', example: 'There is a big tree in our garden.' },
+  ],
+  // 第2周
+  [
+    { word: 'book', chinese: '书', english: 'book', example: 'I read a book every night.' },
+    { word: 'friend', chinese: '朋友', english: 'friend', example: 'Li Ming is my best friend.' },
+    { word: 'music', chinese: '音乐', english: 'music', example: 'I listen to music when I am happy.' },
+    { word: 'water', chinese: '水', english: 'water', example: 'Please give me a glass of water.' },
+    { word: 'home', chinese: '家', english: 'home', example: 'I go home after school.' },
+    { word: 'time', chinese: '时间', english: 'time', example: 'What time is it now?' },
+    { word: 'food', chinese: '食物', english: 'food', example: 'Healthy food is important for us.' },
+    { word: 'school', chinese: '学校', english: 'school', example: 'My school starts at 8 o\'clock.' },
+    { word: 'teacher', chinese: '老师', english: 'teacher', example: 'My teacher is very kind.' },
+    { word: 'game', chinese: '游戏', english: 'game', example: 'This game is very fun.' },
+  ],
+  // 第3周
+  [
+    { word: 'run', chinese: '跑', english: 'run', example: 'I run in the park every morning.' },
+    { word: 'swim', chinese: '游泳', english: 'swim', example: 'I can swim very well.' },
+    { word: 'read', chinese: '读/阅读', english: 'read', example: 'I read English books every day.' },
+    { word: 'write', chinese: '写', english: 'write', example: 'I write my diary every night.' },
+    { word: 'play', chinese: '玩', english: 'play', example: 'Children like to play in the park.' },
+    { word: 'draw', chinese: '画画', english: 'draw', example: 'I draw pictures in art class.' },
+    { word: 'sing', chinese: '唱歌', english: 'sing', example: 'I like to sing English songs.' },
+    { word: 'jump', chinese: '跳', english: 'jump', example: 'The rabbit can jump very high.' },
+    { word: 'walk', chinese: '走路', english: 'walk', example: 'I walk to school every day.' },
+    { word: 'climb', chinese: '爬', english: 'climb', example: 'I climb the hill with my dad.' },
+  ],
+  // 第4周
+  [
+    { word: 'rain', chinese: '雨', english: 'rain', example: 'The rain stopped and the sun came out.' },
+    { word: 'snow', chinese: '雪', english: 'snow', example: 'It snowed last winter.' },
+    { word: 'wind', chinese: '风', english: 'wind', example: 'The wind is very strong today.' },
+    { word: 'cloud', chinese: '云', english: 'cloud', example: 'There are white clouds in the sky.' },
+    { word: 'sky', chinese: '天空', english: 'sky', example: 'The sky is blue today.' },
+    { word: 'star', chinese: '星星', english: 'star', example: 'I can see many stars at night.' },
+    { word: 'moon', chinese: '月亮', english: 'moon', example: 'The moon is round tonight.' },
+    { word: 'rainbow', chinese: '彩虹', english: 'rainbow', example: 'A rainbow appeared after the rain.' },
+    { word: 'river', chinese: '河流', english: 'river', example: 'The river flows through the city.' },
+    { word: 'lake', chinese: '湖泊', english: 'lake', example: 'We went boating on the lake.' },
+  ],
+  // 第5周
+  [
+    { word: 'happy', chinese: '开心的', english: 'happy', example: 'I am very happy today.' },
+    { word: 'sad', chinese: '伤心的', english: 'sad', example: 'She looked sad this morning.' },
+    { word: 'angry', chinese: '生气的', english: 'angry', example: 'He was angry because he lost his book.' },
+    { word: 'tired', chinese: '累的', english: 'tired', example: 'I am tired after playing sports.' },
+    { word: 'excited', chinese: '兴奋的', english: 'excited', example: 'The children were excited about the trip.' },
+    { word: 'scared', chinese: '害怕的', english: 'scared', example: 'I am scared of the dark.' },
+    { word: 'proud', chinese: '自豪的', english: 'proud', example: 'I felt proud when I got an A.' },
+    { word: 'bored', chinese: '无聊的', english: 'bored', example: 'I am bored at home today.' },
+    { word: 'sick', chinese: '生病的', english: 'sick', example: 'I was sick last week.' },
+    { word: 'hungry', chinese: '饿的', english: 'hungry', example: 'I am hungry. When is dinner?' },
+  ],
+  // 第6周
+  [
+    { word: 'red', chinese: '红色', english: 'red', example: 'The apple is red.' },
+    { word: 'blue', chinese: '蓝色', english: 'blue', example: 'The sky is blue.' },
+    { word: 'green', chinese: '绿色', english: 'green', example: 'The grass is green.' },
+    { word: 'yellow', chinese: '黄色', english: 'yellow', example: 'The banana is yellow.' },
+    { word: 'orange', chinese: '橙色', english: 'orange', example: 'The orange is sweet.' },
+    { word: 'purple', chinese: '紫色', english: 'purple', example: 'Grapes can be purple.' },
+    { word: 'pink', chinese: '粉色', english: 'pink', example: 'Her dress is pink.' },
+    { word: 'brown', chinese: '棕色', english: 'brown', example: 'The bear is brown.' },
+    { word: 'black', chinese: '黑色', english: 'black', example: 'The cat is black.' },
+    { word: 'white', chinese: '白色', english: 'white', example: 'The snow is white.' },
+  ],
+  // 第7周
+  [
+    { word: 'father', chinese: '爸爸', english: 'father', example: 'My father works in a bank.' },
+    { word: 'mother', chinese: '妈妈', english: 'mother', example: 'My mother cooks breakfast for me.' },
+    { word: 'brother', chinese: '哥哥/弟弟', english: 'brother', example: 'I play games with my brother.' },
+    { word: 'sister', chinese: '姐姐/妹妹', english: 'sister', example: 'My sister is in Grade 4.' },
+    { word: 'grandma', chinese: '奶奶/外婆', english: 'grandma', example: 'My grandma tells me stories.' },
+    { word: 'grandpa', chinese: '爷爷/外公', english: 'grandpa', example: 'My grandpa grows vegetables.' },
+    { word: 'baby', chinese: '婴儿', english: 'baby', example: 'The baby is sleeping now.' },
+    { word: 'doctor', chinese: '医生', english: 'doctor', example: 'The doctor helped me feel better.' },
+    { word: 'nurse', chinese: '护士', english: 'nurse', example: 'The nurse is very gentle.' },
+    { word: 'policeman', chinese: '警察', english: 'policeman', example: 'The policeman directed traffic.' },
+  ],
+  // 第8周
+  [
+    { word: 'Monday', chinese: '星期一', english: 'Monday', example: 'Monday is the first day of school.' },
+    { word: 'Tuesday', chinese: '星期二', english: 'Tuesday', example: 'I have art class on Tuesday.' },
+    { word: 'Wednesday', chinese: '星期三', english: 'Wednesday', example: 'Wednesday is the middle of the week.' },
+    { word: 'Thursday', chinese: '星期四', english: 'Thursday', example: 'Thursday comes after Wednesday.' },
+    { word: 'Friday', chinese: '星期五', english: 'Friday', example: 'Friday is my favorite day!' },
+    { word: 'Saturday', chinese: '星期六', english: 'Saturday', example: 'I sleep late on Saturday.' },
+    { word: 'Sunday', chinese: '星期日', english: 'Sunday', example: 'Sunday is a rest day.' },
+    { word: 'today', chinese: '今天', english: 'today', example: 'What are you doing today?' },
+    { word: 'tomorrow', chinese: '明天', english: 'tomorrow', example: 'Tomorrow is a holiday.' },
+    { word: 'yesterday', chinese: '昨天', english: 'yesterday', example: 'Yesterday was my birthday.' },
+  ],
+]
+
 const EB = [1, 2, 4, 7, 15, 30]
 const today = () => new Date().toISOString().slice(0, 10)
 const dateN = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10) }
+
+// 一年第几周（从1开始）
+function getWeekOfYear(): number {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 1)
+  return Math.ceil(((now.getTime() - start.getTime()) / 86400000 + start.getDay() + 1) / 7)
+}
+
+// 获取元元本周PET词（每周循环）
+function getYuanWeekWords(): PetWord[] {
+  const week = ((getWeekOfYear() - 1) % YUAN_WEEKS.length) // 0-based index
+  return YUAN_WEEKS[week]
+}
+
 const doy = (() => { const n = new Date(), s = new Date(n.getFullYear(), 0, 0); return Math.floor((n.getTime() - s.getTime()) / 864e5) })()
 const getH = (d: number) => { const s = (d * 5) % HANZI_POOL.length; return [0,1,2,3,4].map(i => HANZI_POOL[(s+i) % HANZI_POOL.length]) }
 const getW = (d: number) => { const s = (d * 8) % PET_POOL.length; return [0,1,2,3,4,5,6,7].map(i => PET_POOL[(s+i) % PET_POOL.length]) }
 
 interface Props { childId: ChildId; theme: any }
 
-// Key fix: learnGuardRef prevents learn tab auto-skip from firing
-// while the "correct" feedback is being displayed (1.2s).
-// reviewGuardRef prevents review tab auto-skip during its 1s "correct" display.
+// 设计原则：
+// LearnTab：答对后显示"下一个"按钮，用户主动点击才进下一题（不用auto-skip，无时序bug）
+// ReviewTab：答对后1秒自动进下一题（auto-skip + reviewGuard保护）
 export default function LearnPage({ childId, theme }: Props) {
   const [tab, setTab] = useState<'learn'|'review'>('learn')
   const [reviews, setReviews] = useState<Record<string,ReviewEntry>>(() => { try { return JSON.parse(localStorage.getItem(`pet-island-${childId}-reviews`) || '{}') } catch { return {} } })
-  // Learn tab
-  const [ls, setLs] = useState<'c'|'ok'|'err'>('c')
-  const [li, setLi] = useState(0)
+
+  // --- Learn tab state ---
+  const [ls, setLs] = useState<'c'|'ok'|'err'>('c')      // c=choice, ok=correct, err=wrong
+  const [li, setLi] = useState(0)                          // current item index
   const [hO, setHO] = useState<HanziWord[]>([])
   const [wO, setWO] = useState<PetWord[]>([])
-  const [si, setSi] = useState<number|null>(null)
-  const [wi, setWi] = useState<number|null>(null)
-  const [fl, setFl] = useState(false)
-  const [lk, setLk] = useState<string[]>([])
-  // Review tab
+  const [si, setSi] = useState<number|null>(null)          // selected option index
+  const [wi, setWi] = useState<number|null>(null)          // wrong option index
+  const [fl, setFl] = useState(false)                       // flash green on correct
+  // justLearnedRef: 答对后置为true，下次渲染显示"下一个"按钮；用户点按钮后设回false
+  const justLearnedRef = useRef(false)
+
+  // --- Review tab state ---
   const [rs, setRs] = useState<'c'|'ok'|'err'>('c')
   const [ri, setRi] = useState(0)
   const [ro, setRo] = useState<(HanziWord|PetWord)[]>([])
@@ -153,87 +282,80 @@ export default function LearnPage({ childId, theme }: Props) {
   const [rwi, setRwi] = useState<number|null>(null)
   const [rf, setRf] = useState(false)
   const [rm, setRm] = useState('')
-  // Guards prevent auto-skip from firing during feedback display
-  const learnGuard = useRef(false)
   const reviewGuard = useRef(false)
 
   const isY = childId === 'yuanyuan'
-  const tn: (HanziWord|PetWord)[] = isY ? getH(doy) : getW(doy)
+  const yuanWords = getYuanWeekWords()
+  const weekNum = getWeekOfYear()
+  // 元元用每周PET词；新北用PET词池（每天8词轮换）
+  const todaysWords: (HanziWord|PetWord)[] = isY ? yuanWords : getW(doy)
   const dk = Object.entries(reviews).filter(([,e]) => e.nextReviewDate <= today() && e.level < 6).map(([k]) => k)
   const ma = Object.entries(reviews).filter(([,e]) => e.level >= 6).length
-  const nc = tn.filter(item => { const k = isY ? `hanzi-${(item as HanziWord).char}` : `word-${(item as PetWord).word}`; return !reviews[k] && !lk.includes(k) }).length
+  // 已掌握的不算新学
+  const nc = todaysWords.filter(item => {
+    const k = isY ? `yuan-${(item as PetWord).word}` : `word-${(item as PetWord).word}`
+    return !reviews[k]
+  }).length
   const di = dk.map(k => k.startsWith('hanzi-') ? { k, item: HANZI_POOL.find(h => h.char === k.slice(6)) || HANZI_POOL[0], t: 'h' as const } : { k, item: PET_POOL.find(p => p.word === k.slice(5)) || PET_POOL[0], t: 'w' as const })
-  const ci = tn[li]
-  const ck = isY ? `hanzi-${(ci as HanziWord).char}` : `word-${(ci as PetWord).word}`
-  const al = !!reviews[ck] || lk.includes(ck)
+  const ci: HanziWord|PetWord = todaysWords[li]
+  const ck = isY ? `yuan-${(ci as PetWord).word}` : (isY ? '' : `word-${(ci as PetWord).word}`)
+  const al = !!reviews[ck] || justLearnedRef.current
   const cr = di[ri]
 
-  // Init options
-  useEffect(() => {
-    if (tab !== 'learn' || al || !ci) return
-    if (isY) { const c = ci as HanziWord; setHO([...HANZI_POOL.filter(h => h.char !== c.char).sort(() => Math.random()-.5).slice(0,3), c].sort(() => Math.random()-.5)) }
-    else { const w = ci as PetWord; setWO([...PET_POOL.filter(p => p.word !== w.word).sort(() => Math.random()-.5).slice(0,3), w].sort(() => Math.random()-.5)) }
+    useEffect(() => {
+    if (tab !== 'learn' || !ci) return
+    if (isY) {
+      const c = ci as HanziWord
+      setHO([...HANZI_POOL.filter(h => h.char !== c.char).sort(() => Math.random()-.5).slice(0,3), c].sort(() => Math.random()-.5))
+    } else {
+      const w = ci as PetWord
+      setWO([...PET_POOL.filter(p => p.word !== w.word).sort(() => Math.random()-.5).slice(0,3), w].sort(() => Math.random()-.5))
+    }
     setLs('c'); setSi(null); setWi(null)
   }, [tab, li])
 
-  // Learn tab: skip learned items when switching tabs
-  useEffect(() => {
-    if (tab !== 'learn') return
-    let idx = li
-    const all = isY ? getH(doy) : getW(doy)
-    while (idx < all.length) {
-      const k = isY ? `hanzi-${(all[idx] as HanziWord).char}` : `word-${(all[idx] as PetWord).word}`
-      if (!reviews[k] && !lk.includes(k)) break
-      idx++
-    }
-    if (idx !== li && idx < all.length) setLi(idx)
-  }, [tab])
-
+  // Learn: handle option selection
+  // NO auto-advance — correct answer shows "下一个" button; user clicks to advance
   function handleLearnSelect(idx: number) {
     if (ls !== 'c') return
     setSi(idx)
-    const ok = isY ? (hO[idx] as HanziWord).char === (ci as HanziWord).char : (wO[idx] as PetWord).word === (ci as PetWord).word
+    const ok = isY
+      ? (hO[idx] as HanziWord).char === (ci as HanziWord).char
+      : (wO[idx] as PetWord).word === (ci as PetWord).word
     if (ok) {
       setLs('ok'); setFl(true); setTimeout(() => setFl(false), 600)
+      // Save to reviews immediately
       const e: ReviewEntry = { learnedDate: today(), nextReviewDate: dateN(EB[0]), level: 0, correctCount: 0, incorrectCount: 0 }
       const u = { ...reviews, [ck]: e }
       setReviews(u); localStorage.setItem(`pet-island-${childId}-reviews`, JSON.stringify(u))
-      setLk(k => [...k, ck])
-      learnGuard.current = true
-      setTimeout(() => {
-        learnGuard.current = false
-        setLi(i => i + 1)
-      }, 1200)
+      // Signal: next render should show "下一个" button
+      justLearnedRef.current = true
     } else {
       setLs('err'); setWi(idx)
       setTimeout(() => { setLs('c'); setSi(null); setWi(null) }, 800)
     }
   }
 
-  // Learn tab auto-skip: skip items that are now learned (but NOT during feedback display)
-  useEffect(() => {
-    if (tab !== 'learn') return
-    if (learnGuard.current) return  // skip during feedback display
-    if (!al) return
-    let idx = li + 1
-    const all = isY ? getH(doy) : getW(doy)
-    while (idx < all.length) {
-      const k = isY ? `hanzi-${(all[idx] as HanziWord).char}` : `word-${(all[idx] as PetWord).word}`
-      if (!reviews[k] && !lk.includes(k)) break
-      idx++
-    }
-    if (idx !== li && idx < all.length) setLi(idx)
-  }, [tab, li])
+  // Learn: user clicks "下一个" to advance to next item
+  function handleLearnNext() {
+    justLearnedRef.current = false
+    setLi(i => Math.min(i + 1, todaysWords.length - 1))
+  }
 
-  // Review options init
+  // Review: init options
   useEffect(() => {
     if (tab !== 'review' || !cr) return
-    if (cr.t === 'h') { const c = cr.item as HanziWord; setRo([...HANZI_POOL.filter(h => h.char !== c.char).sort(() => Math.random()-.5).slice(0,3), c].sort(() => Math.random()-.5)) }
-    else { const w = cr.item as PetWord; setRo([...PET_POOL.filter(p => p.word !== w.word).sort(() => Math.random()-.5).slice(0,3), w].sort(() => Math.random()-.5)) }
+    if (cr.t === 'h') {
+      const c = cr.item as HanziWord
+      setRo([...HANZI_POOL.filter(h => h.char !== c.char).sort(() => Math.random()-.5).slice(0,3), c].sort(() => Math.random()-.5))
+    } else {
+      const w = cr.item as PetWord
+      setRo([...PET_POOL.filter(p => p.word !== w.word).sort(() => Math.random()-.5).slice(0,3), w].sort(() => Math.random()-.5))
+    }
     setRs('c'); setRsi(null); setRwi(null); setRm('')
   }, [tab, ri])
 
-  // Review auto-skip: skip mastered items (level >= 6). Guard prevents skip during 'ok'/'err' display.
+  // Review: auto-skip mastered items (level>=6) — guarded so it doesn't fire during 'ok' display
   useEffect(() => {
     if (tab !== 'review') return
     if (reviewGuard.current) { reviewGuard.current = false; return }
@@ -242,6 +364,7 @@ export default function LearnPage({ childId, theme }: Props) {
     if (!e || e.level >= 6) { reviewGuard.current = true; setRi(i => Math.min(i + 1, di.length - 1)) }
   }, [tab, ri])
 
+  // Review: handle selection
   function handleReviewSelect(idx: number) {
     if (rs !== 'c' || !cr) return
     setRsi(idx)
@@ -257,7 +380,7 @@ export default function LearnPage({ childId, theme }: Props) {
       const updated: ReviewEntry = { ...e, level: nl, correctCount: (e?.correctCount||0)+1, incorrectCount: e?.incorrectCount||0, nextReviewDate: nl >= 6 ? '9999-12-31' : dateN(iv) }
       const nr = { ...reviews, [cr.k]: updated }
       setReviews(nr); localStorage.setItem(`pet-island-${childId}-reviews`, JSON.stringify(nr))
-      // FIX: guard BEFORE timeout so auto-skip doesn't fire during 1s "ok" display
+      // Guard BEFORE setTimeout — prevents auto-skip during 1s display
       reviewGuard.current = true
       const atLast = ri >= di.length - 1
       setTimeout(() => {
@@ -288,44 +411,49 @@ export default function LearnPage({ childId, theme }: Props) {
     return c + 'bg-gray-50 border-2 border-transparent'
   }
 
+  const showLearnNext = ls === 'ok' && justLearnedRef.current
+
   return (
     <div className="p-4 space-y-4">
+      {/* Header */}
       <div className={`pixel-card rounded-3xl p-4 bg-${ac}-100`}>
         <div className="flex items-center justify-between mb-2">
-          <h2 className={`font-black text-lg text-${ac}-700`}>{isY ? '📝 认字学习' : '📖 PET 词汇'}</h2>
-          <span className={`text-xs font-bold px-2 py-1 bg-white rounded-full text-${ac}-700`}>{new Date().toLocaleDateString('zh-CN', {month:'long',day:'numeric'})}</span>
+          <h2 className={`font-black text-lg text-${ac}-700`}>
+            {isY ? (tab === 'learn' ? '📝 认字学习' : '📖 本周单词') : (tab === 'learn' ? '📖 PET 词汇' : '📖 PET 复习')}
+          </h2>
+          <span className={`text-xs font-bold px-2 py-1 bg-white rounded-full text-${ac}-700`}>
+            {isY && tab === 'learn' ? `第${weekNum}周` : new Date().toLocaleDateString('zh-CN', {month:'long',day:'numeric'})}
+          </span>
         </div>
         <div className="flex gap-4 text-sm">
-          <span>🆕 新 <strong>{nc}{isY?'/5':'/8'}</strong></span>
+          <span>🆕 新 <strong>{nc}{isY ? `/${yuanWords.length}` : '/8'}</strong></span>
           <span>📅 待复习 <strong>{dk.length}</strong></span>
           <span>🏆 已掌握 <strong>{ma}</strong></span>
         </div>
       </div>
+
+      {/* Tab switcher */}
       <div className="flex bg-white rounded-2xl p-1 border-2 border-gray-200">
         <button onClick={() => setTab('learn')} className={`flex-1 py-2 rounded-xl font-bold text-sm ${tab==='learn'?bc+' text-white':'text-gray-400'}`}>
-          📚 学新{isY?'字':'词'}
+          📚 学{isY ? '字' : '词'}
         </button>
         <button onClick={() => setTab('review')} className={`flex-1 py-2 rounded-xl font-bold text-sm ${tab==='review'?bc+' text-white':'text-gray-400'}`}>
           🔄 复习 {dk.length>0 && <span className="bg-red-500 text-white text-xs rounded-full px-1.5 ml-1">{dk.length}</span>}
         </button>
       </div>
 
+      {/* ===== LEARN TAB ===== */}
       {tab === 'learn' && (
         <div className="space-y-3">
-          {li >= tn.length ? (
+          {li >= todaysWords.length ? (
             <div className="pixel-card rounded-3xl p-8 text-center">
               <div className="text-5xl mb-3">🎉</div>
-              <p className="font-black text-gray-700 text-lg">太棒了！今天学完了！</p>
+              <p className="font-black text-gray-700 text-lg">太棒了！{isY ? '字都学完了！' : '词都学完了！'}</p>
               <p className="text-sm text-gray-500 mt-1">明天再来学新内容吧~</p>
-            </div>
-          ) : al ? (
-            <div className="pixel-card rounded-3xl p-8 text-center bg-green-50 border-2 border-green-200">
-              <div className="text-4xl mb-2">✅</div>
-              <p className="font-black text-green-700">已学会！</p>
-              <button onClick={() => setLi(i => Math.min(i + 1, tn.length - 1))} className="mt-3 bg-green-400 hover:bg-green-500 text-white px-5 py-2 rounded-xl font-bold text-sm">下一个 →</button>
             </div>
           ) : (
             <>
+              {/* Question card */}
               <div className={`pixel-card rounded-3xl p-5 ${fl?'bg-green-100 border-2 border-green-400 animate-pulse':'bg-white'} transition-all`}>
                 {isY ? (
                   <>
@@ -336,7 +464,7 @@ export default function LearnPage({ childId, theme }: Props) {
                     <div className="grid grid-cols-2 gap-3">
                       {hO.map((opt, i) => {
                         const isS = si === i, isW = i === wi, isCA = (ci as HanziWord).char === opt.char
-                        return <button key={opt.char} onClick={() => handleLearnSelect(i)} disabled={ls!=='c'} className={`${cls(isS,isW,isCA,ls)} ${ls!=='c'?'disabled:cursor-not-allowed':''}`}>{opt.emoji}</button>
+                        return <button key={opt.char} onClick={() => handleLearnSelect(i)} disabled={ls !== 'c'} className={`${cls(isS,isW,isCA,ls)} ${ls!=='c'?'disabled:cursor-not-allowed':''}`}>{opt.emoji}</button>
                       })}
                     </div>
                   </>
@@ -347,25 +475,47 @@ export default function LearnPage({ childId, theme }: Props) {
                       <p className="text-sm text-gray-400 mt-1">选出对应的中文解释</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      {wO.map((opt, i) => {
+                      {(wO as PetWord[]).map((opt, i) => {
                         const isS = si === i, isW = i === wi, isCA = (ci as PetWord).word === opt.word
-                        return <button key={opt.word+i} onClick={() => handleLearnSelect(i)} disabled={ls!=='c'} className={`${cls(isS,isW,isCA,ls)} text-sm`}><div className="text-base font-black">{opt.chinese}</div></button>
+                        return <button key={opt.word+i} onClick={() => handleLearnSelect(i)} disabled={ls !== 'c'} className={`${cls(isS,isW,isCA,ls)} text-sm`}><div className="text-base font-black">{opt.chinese}</div></button>
                       })}
                     </div>
                   </>
                 )}
-                {ls === 'ok' && <div className="mt-3 text-center"><span className="bg-green-400 text-white px-4 py-1 rounded-full font-bold text-sm">✅ 正确！太棒了！</span></div>}
-                {ls === 'err' && <div className="mt-3 text-center"><span className="bg-red-400 text-white px-4 py-1 rounded-full font-bold text-sm">❌ 不对哦，再试一次！</span></div>}
+                {ls === 'ok' && (
+                  <div className="mt-3 text-center"><span className="bg-green-400 text-white px-4 py-1 rounded-full font-bold text-sm">✅ 正确！</span></div>
+                )}
+                {ls === 'err' && (
+                  <div className="mt-3 text-center"><span className="bg-red-400 text-white px-4 py-1 rounded-full font-bold text-sm">❌ 不对哦，再试一次！</span></div>
+                )}
               </div>
+
+              {/* Next button — only shows after correct answer (no auto-advance) */}
+              {showLearnNext && li < todaysWords.length - 1 && (
+                <button onClick={handleLearnNext}
+                  className="w-full bg-green-400 hover:bg-green-500 text-white py-3 rounded-2xl font-black text-base transition-all active:scale-95">
+                  下一个 →
+                </button>
+              )}
+              {showLearnNext && li >= todaysWords.length - 1 && (
+                <div className="text-center">
+                  <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-bold text-sm">🎉 这组词学完了！</span>
+                </div>
+              )}
+
+              {/* Progress dots */}
               <div className="flex items-center justify-center gap-2">
-                {tn.map((_: any, i: number) => <div key={i} className={"w-2 h-2 rounded-full transition-all " + (i === li ? "bg-yellow-400 w-4" : i < li ? "bg-green-400" : "bg-gray-200")} />)}
+                {todaysWords.map((_, i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full transition-all ${i === li ? 'bg-yellow-400 w-4' : i < li ? 'bg-green-400' : 'bg-gray-200'}`} />
+                ))}
               </div>
-              <p className="text-center text-xs text-gray-400">第 {li + 1} / {tn.length} 个 {isY?'字':'词'}</p>
+              <p className="text-center text-xs text-gray-400">第 {li + 1} / {todaysWords.length} 个{isY ? '字' : '词'}</p>
             </>
           )}
         </div>
       )}
 
+      {/* ===== REVIEW TAB ===== */}
       {tab === 'review' && (
         <div className="space-y-3">
           {di.length === 0 ? (
