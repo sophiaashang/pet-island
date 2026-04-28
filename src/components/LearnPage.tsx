@@ -289,7 +289,10 @@ export default function LearnPage({ childId, theme }: Props) {
   const yuanWords = getYuanWeekWords()
   const weekNum = getWeekOfYear()
   // 元元用每周PET词；新北用PET词池（每天8词轮换）
-  const todaysWords: (HanziWord|PetWord)[] = isY ? getH(doy) : getW(doy)
+  // 元元：hanzi tab用汉字池（getH），words tab用每周词；新北：用PET词池
+  const todaysWords: (HanziWord|PetWord)[] = isY
+    ? (tab === 'words' ? yuanWords : getH(doy))
+    : getW(doy)
   const dk = Object.entries(reviews).filter(([,e]) => e.nextReviewDate <= today() && e.level < 6).map(([k]) => k)
   const ma = Object.entries(reviews).filter(([,e]) => e.level >= 6).length
   // 已掌握的不算新学（words tab用yuan-${word}键）
@@ -301,7 +304,9 @@ export default function LearnPage({ childId, theme }: Props) {
   const yuanWordsNewCount = yuanWords.filter(item => !reviews[`yuan-${item.word}`]).length
   const di = dk.map(k => k.startsWith('hanzi-') ? { k, item: HANZI_POOL.find(h => h.char === k.slice(6)) || HANZI_POOL[0], t: 'h' as const } : { k, item: PET_POOL.find(p => p.word === k.slice(5)) || PET_POOL[0], t: 'w' as const })
   const ci: HanziWord|PetWord = todaysWords[li]
-  const ck = isY ? `hanzi-${(ci as HanziWord).char}` : `word-${(ci as PetWord).word}`
+  const ck = isY
+    ? (tab === 'words' ? `yuan-${(ci as PetWord).word}` : `hanzi-${(ci as HanziWord).char}`)
+    : `word-${(ci as PetWord).word}`
   const al = !!reviews[ck] || justLearnedRef.current
   const cr = di[ri]
 
@@ -479,7 +484,7 @@ export default function LearnPage({ childId, theme }: Props) {
                     <div className="grid grid-cols-2 gap-3">
                       {hO.map((opt, i) => {
                         const isS = si === i, isW = i === wi, isCA = (ci as HanziWord).char === opt.char
-                        return <button key={opt.char} onClick={() => handleLearnSelect(i)} disabled={ls !== 'c'} className={`${cls(isS,isW,isCA,ls)} ${ls!=='c'?'disabled:cursor-not-allowed':''}`}>{opt.emoji}</button>
+                        return <button key={opt.char} onClick={() => handleLearnSelect(i)} disabled={ls !== 'c'} className={`${cls(isS,isW,isCA,ls)} ${ls!=='c'?'disabled:cursor-not-allowed':''}`}>{opt.char}</button>
                       })}
                     </div>
                   </>
